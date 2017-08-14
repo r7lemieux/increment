@@ -6,7 +6,7 @@ import * as knex from 'knex';
 
 import {idRoutes} from './id/id-routes';
 
-const dbStarter = require('./common/db/dbStarterService');
+const dbStarter = require('./common/db/dbStarter-service');
 const port = 4010;
 
 class App {

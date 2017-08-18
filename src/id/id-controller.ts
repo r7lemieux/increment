@@ -1,8 +1,7 @@
 import {Request, Response} from 'express';
 import {idService} from './id-service';
-import * as Prom from 'bluebird';
-import * as util from 'util';
 import {dbValidationService} from '../common/db/dbValidation-service';
+import {Result} from '../common/message/result';
 
 type IdRequestTask = {
   key: string,
@@ -14,7 +13,7 @@ export class IdController {
   constructor() {
   }
 
-  generateId(req: Request, res: Response) {
+  generateId(req: Request, res: Response): void {
     const key = req.query.key;
     if (!this.validParams(req, res)) return;
 
@@ -24,7 +23,7 @@ export class IdController {
     })
   }
 
-  getAllocatedRanges(req: Request, res: Response) {
+  getAllocatedRanges(req: Request, res: Response): void {
     const key = req.query.key;
     if (!this.validParams(req, res)) return;
 
@@ -34,7 +33,7 @@ export class IdController {
       });
   }
 
-  validParams(req, res) {
+  validParams(req: Request, res: Response): boolean {
     const error = dbValidationService.validateKey(req.query.key);
     if (error) {
       res.status(400);

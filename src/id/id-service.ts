@@ -1,4 +1,3 @@
-import {Response} from 'express';
 import {idDb} from './id-db';
 import * as Prom from 'bluebird';
 const config = require('./id-config.json');

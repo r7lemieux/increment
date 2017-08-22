@@ -1,19 +1,36 @@
+import {userDb} from '../../user/user-db';
+import * as Prom from 'bluebird';
 declare function require(name: string);
 
 declare const console;
 
-// const idDb = require('id/id-db').instance;
-import {idDb} from '../../id/id-db';
-import * as Pool from 'pg-pool';
+import {dbManagers} from './db-index';
+import * as ddd from './db-index';
+import {Pool, PoolConfig} from 'pg';
 
 const util         = require('util');
 const pg           = require('pg');
 const NativeClient = pg.native.Client;
-const Prom         = require('bluebird');
 
 // Prom.promisifyAll(Pool);
+export class DbStarter {
+  pool: Pool = null;
+  poolConfig: PoolConfig;
 
-let pool = null;
+  constructor() {
+    this.poolConfig = {
+      user             : 'r7lemieux',
+      database         : 'kdr',
+      password         : 'q12waq12',
+      host             : 'localhost',
+      port             : 5510,
+      max              : 10,
+      application_name : 'IdManager',
+      idleTimeoutMillis: 30000,
+
+      // Client: NativeClient,
+    }
+  }
 
 // const connectDatabaseRaw = (knex) => {
 //   const client = new pg.Client({
@@ -31,94 +48,37 @@ let pool = null;
 //   return client;
 // };
 
-const connectDatabase = () => {
-  const config = {
-    user             : 'r7lemieux',
-    database         : 'kdr',
-    password         : 'q12waq12',
-    host             : 'localhost',
-    port             : 5510,
-    max              : 10,
-    application_name : 'IdManager',
-    idleTimeoutMillis: 30000,
-    // Client: NativeClient,
-  };
-  const pool = new Pool(config);
-  pool.on('error', function (error, client) {
-    console.log(`=> dbService:37 error ${util.inspect(error)}`)
-  })
-  return pool;
-};
-
-const testDatabase = (database) => {
-  const res1 = database.raw('SELECT * FROM increment.newTable1')
-    .then(res2 => {
-      console.log(`=> dbService:26 res2 ${util.inspect(res2)}`);
-      return database;
+  connectDatabase = () => {
+    this.pool = new Pool(this.poolConfig);
+    this.pool.on('error', function (error, client) {
+      console.log(`=> dbService:37 error ${util.inspect(error)}`)
     })
-    .catch(err => {
-      console.log(`=> dbService:30 err ${util.inspect(err)}`)
-      return database;
+  };
+
+  initDatabase = () => {
+    this.connectDatabase();
+    // pool.query('CREATE SCHEMA IF NOT EXISTS idmanager AUTHORIZATION r7lemieux');
+
+    this.pool.query("ALTER DATABASE kdr set search_path='idmanager'");
+    dbManagers.forEach(dbManager => {
+      dbManager.init(this.pool);
     });
-};
+    return Prom.map(dbManagers, (dbManager => dbManager.createTables()));
+    // testDatabase2(pool);
+    // const database = connectDatabase(knex);
+    // database.raw('SET search_path TO \'idmanager\';')
+    //   .then(() => database)
+    //   .then(testDatabase)
+    //   .then(() => nextId.createTable(database))
+    //   .finally(database.close);
+  };
 
-const testDatabase2 = (pool) => {
-  console.log(`=> dbService:54 `);
-  pool.connect()
-    .then(database => database.query('select * from idmanager.next_ids', [])
-      .then(result => {
-        database.release();
-        console.log(`=> dbService:65 result.rows[0] ${util.inspect(result.rows[0])}`)
-      })
-      .catch(database.release),
-    )
-    .catch(err => console.log(`=> dbService:63 err ${util.inspect(err)}`));
+  ensureInitDatabase = (): Prom<any> => {
+    if (!this.pool) {
+      return this.initDatabase();
+    }
+    return Prom.resolve();
+  }
+}
 
-};
-
-const createNextIdsTable = () => {
-  pool.query(
-    `CREATE TABLE IF NOT EXISTS next_ids (
-      name      VARCHAR(40) PRIMARY KEY,
-      next_id   INT DEFAULT 1001,
-      increment INT DEFAULT 1000,
-      mod_time  timestamp DEFAULT current_timestamp
-  );`,
-  )
-};
-
-const createIdRangesTable = () => {
-  pool.query(
-    `CREATE TABLE IF NOT EXISTS id_ranges (
-      id          SERIAL PRIMARY KEY,
-      name        VARCHAR (40),
-      range_start INT,
-      range_end   INT,
-      create_time TIMESTAMP DEFAULT current_timestamp
-    );`,
-  );
-};
-
-const rollback = (client, done) => {
-  client.query('ROLLBACK', err => done(err));
-  return Prom.reject();
-};
-
-const init = () => {
-  pool = connectDatabase();
-  // pool.query('CREATE SCHEMA IF NOT EXISTS idmanager AUTHORIZATION r7lemieux');
-  pool.query("ALTER DATABASE kdr set search_path='idmanager'");
-  idDb.init(pool);
-  idDb.createTables();
-  // testDatabase2(pool);
-  // const database = connectDatabase(knex);
-  // database.raw('SET search_path TO \'idmanager\';')
-  //   .then(() => database)
-  //   .then(testDatabase)
-  //   .then(() => nextId.createTable(database))
-  //   .finally(database.close);
-};
-
-exports.init     = init;
-exports.pool     = pool;
-exports.rollback = rollback;
+export const dbStarter: DbStarter = new DbStarter();

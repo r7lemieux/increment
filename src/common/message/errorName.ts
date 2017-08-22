@@ -1,0 +1,16 @@
+export enum ErrorName {
+  ok,
+  'db_SingleReturnsMultiple',
+  'db_FailToCreate',
+  'db_NotFound',
+  'db_invalidKey',
+  'db_invalidDigit',
+  'db_Error',
+  'server_Error',
+  'field_invalidNumber',
+  'field_invalidKey',
+  'field_invalidEmail',
+  'field_invalid',
+  'field_numberTooSmall',
+  'field_numberTooLarge',
+}

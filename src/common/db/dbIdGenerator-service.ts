@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as Prom from 'bluebird';
+import {idService} from '../../id/id-service';
 
 declare interface IdState {
   nextId: number
@@ -36,16 +37,20 @@ export class DbIdGeneratorService {
 
     return new Prom((resolve, reject) => {
         if (idState.nextId > idState.to) {
+          if (global['testing']) {
+            return idService.getNextIdRange(key)
+              .then(newRange => {
+                this.hydrateIdState(idState, newRange);
+                resolve(nextId);
+              });
+          }
           const req = http.request({
             hostname: this.idServer.hostname,
             port    : this.idServer.port,
             path    : this.idServer.path + key,
           });
           req.on('data', newRange => {
-            idState.from   = newRange.from;
-            idState.to     = newRange.to;
-            idState.nextId = newRange.from;
-            idState.nextId++;
+            this.hydrateIdState(idState, newRange);
             resolve(nextId);
           });
           req.on('error', function (e) {
@@ -60,6 +65,13 @@ export class DbIdGeneratorService {
          reject('timeout on getting range for ' + JSON.stringify(idState));
       }, 2000);
     });
+  }
+
+  protected hydrateIdState(idState, newRange) {
+    idState.from   = newRange.from;
+    idState.to     = newRange.to;
+    idState.nextId = newRange.from;
+    idState.nextId++;
   }
 }
 

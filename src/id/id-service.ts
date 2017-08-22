@@ -42,7 +42,7 @@ export class IdService {
     if (!table.active && table.tasks.length) {
       table.active = true;
       const task = table.tasks.shift();
-      return this.increment(task.key)
+      return this.getNextIdRange(task.key)
         .then( res => {
           task.cb(res);
           table.active = false;
@@ -53,9 +53,8 @@ export class IdService {
     }
   }
 
-  increment(key: string): Prom<any> {
-    let val: number = 0;
-    return idDb.incrementId(key, this.incrementSize);
+  getNextIdRange(key: string): Prom<any> {
+    return idDb.getNextIdRange(key, this.incrementSize);
   }
 
   getAllocatedRanges(name: string) {

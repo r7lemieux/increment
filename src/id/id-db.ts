@@ -2,6 +2,8 @@ import * as util from 'util';
 import * as Prom from 'bluebird';
 import * as fs from 'fs';
 import {dbValidationService} from '../common/db/dbValidation-service';
+import {Pool} from 'pg';
+import Bluebird = require('bluebird');
 
 // import './sql/getIncrement.vLong.sql';
 // import * getIncrementSqlText from './sql/getIncrement.vLong.sql';
@@ -15,7 +17,7 @@ import {dbValidationService} from '../common/db/dbValidation-service';
 
 export class IdDb {
 
-  protected pool;
+  protected pool: Pool;
 
   constructor() {
   }
@@ -24,9 +26,11 @@ export class IdDb {
     this.pool = pool;
   }
 
-  public createTables() {
-    this.createNextIdsTable();
-    this.createIdRangesTable();
+  public createTables(): Prom<any> {
+    return Prom.all([
+      this.createNextIdsTable(),
+      this.createIdRangesTable(),
+    ]);
   }
 
   createNextIdsTable() {
@@ -48,7 +52,7 @@ export class IdDb {
     );`);
   }
 
-  protected getIncrementSql = (name: string, increment: number): string => {
+  protected getNextIdRangeSql = (name: string, increment: number): string => {
     var a1 = `IF EXISTS (SELECT * FROM next_ids WHERE name = '${name}') THEN
               UPDATE next_ids 
               SET next_id = (c.next_id + c.increment) 
@@ -114,17 +118,19 @@ export class IdDb {
     ])
   };
 
-  public incrementId(name: string, incrementSize: number): Prom<any> {
+  public getNextIdRange(name: string, incrementSize: number): Prom<any> {
     let client = null;
     let result = null;
 
-    return this.pool.connect()
-      .then(newClient => {
-        client = newClient;
-        return client.query('BEGIN');
-      })
+    return new Prom((resolve, reject) => {
+      return this.pool.connect()
+        .then(newClient => {
+          client = newClient;
+          resolve(client.query('BEGIN'));
+        }, reject)
+    })
       .then(() => {
-        const sql = this.getIncrementSql(name, incrementSize);
+        const sql = this.getNextIdRangeSql(name, incrementSize);
         return client.query(sql, []);
       })
       .then(newResult => {
@@ -147,7 +153,7 @@ export class IdDb {
       })
   }
 
-  getAllocatedRanges(name): Prom<any> {
+  getAllocatedRanges(name): Promise<any> {
     let client = null;
     return this.pool.connect()
       .then(newClient => {
@@ -162,9 +168,9 @@ export class IdDb {
   }
 
   protected releaseClient(client) {
-      if (client) {
-        client.release();
-      }
+    if (client) {
+      client.release();
+    }
   }
 
   protected rollback(client, done) {

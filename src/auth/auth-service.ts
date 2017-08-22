@@ -45,7 +45,7 @@ export class AuthService {
 
     passport.use(new LocalStrategy(
      function(username, password, done) {
-      userService.findOne({ username: username }, (err, user) => {
+      userService.findSingle({ username: username }, (err, user) => {
       if (err) { return done(err); }
       if (!user) { return done(null, false); }
       if (!user.verifyPassword(password)) { return done(null, false); }

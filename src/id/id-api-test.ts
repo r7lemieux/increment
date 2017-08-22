@@ -13,7 +13,7 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
-describe('id service', () => {
+describe('id api', () => {
   describe('increment id', () => {
 
     it('should return default text ', () => {

@@ -1,7 +1,7 @@
 import {Request, Response} from 'express';
 import {idService} from './id-service';
 import {dbValidationService} from '../common/db/dbValidation-service';
-import {Result} from '../common/message/result';
+import {Rezult} from '../common/message/rezult';
 
 type IdRequestTask = {
   key: string,
@@ -34,7 +34,7 @@ export class IdController {
   }
 
   validParams(req: Request, res: Response): boolean {
-    const error = dbValidationService.validateKey(req.query.key);
+    const error = dbValidationService.key(req.query.key);
     if (error) {
       res.status(400);
       res.send(error);

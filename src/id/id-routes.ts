@@ -3,7 +3,6 @@ import {idController} from './id-controller';
 // import {Application, Request, Response} from 'express';
 
 export function idRoutes(app) {
-  console.log(`=> id-routes:8 `);
   app.get('/api/id', (req, res) => {
     res.send('GET request to id route')
   });

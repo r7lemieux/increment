@@ -7,10 +7,9 @@ import * as express from 'express';
 import * as util from 'util';
 import {Application} from 'express';
 import bodyParser = require('body-parser');
-import testSetup from '../common/testSetup';
-import {userService} from '../user/user-service';
+import {dbStarter} from '../common/db/dbStarter-service';
 
-const routes = require('../common/routes');
+const {idRoutes} = require('../globalId/id-routes');
 const idConfig      = require('./id-config.json');
 const incrementSize = idConfig.incrementSize;
 
@@ -23,12 +22,11 @@ describe('id api', () => {
   let app: Application;
 
   before(() => {
+    dbStarter.ensureInitDatabase();
     app = express();
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: false}));
-    routes(app);
-    return testSetup()
-      .then(userService.deleteAll)
+    idRoutes(app);
   });
 
   describe('increment id', () => {

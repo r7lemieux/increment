@@ -2,6 +2,8 @@ export enum ErrorName {
   ok,
   'db_SingleReturnsMultiple',
   'db_FailToCreate',
+  'db_FailToUpdate',
+  'db_FailToDelete',
   'db_NotFound',
   'db_invalidKey',
   'db_invalidDigit',

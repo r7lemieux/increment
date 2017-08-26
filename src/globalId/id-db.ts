@@ -12,7 +12,7 @@ import Bluebird = require('bluebird');
 // import 'text!./sql/getIncrement.vLong.sql';
 // var getIncrementSqlText = require('text!./sql/getIncrement.vLong.sql');
 
-// var getIncrementSqlText = fs.readFileSync('src/id/sql/getIncrement.vLong.sql');
+// var getIncrementSqlText = fs.readFileSync('src/globalIdsql/getIncrement.vLong.sql');
 // import * as getIncrementSqlText from './sql/getIncrement.vLong.sql';
 
 export class IdDb {

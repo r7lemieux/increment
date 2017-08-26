@@ -1,6 +1,6 @@
 import * as http from 'http';
 import * as Prom from 'bluebird';
-import {idService} from '../../id/id-service';
+import {idService} from '../../globalId/id-service';
 
 declare interface IdState {
   nextId: number

@@ -26,10 +26,6 @@ export class MoDb<MoClass> {
     this.pool = pool;
   }
 
-  protected getNextId = (): Prom<number> => {
-    return dbIdGeneratorService.getNextId(this.tableName);
-  }
-
   // SQL
   // ===
 
@@ -48,6 +44,24 @@ export class MoDb<MoClass> {
     }).join(', ');
     const sqlText    = `INSERT INTO ${this.tableName} (${fieldnames.join(', ')}) VALUES (${values})`;
     return sqlText;
+  }
+
+  protected buildUpdateSql = (partialMo: any): string => {
+    const fieldnames   = Object.keys(partialMo);
+    const fieldUpdates = fieldnames.map(fieldname => {
+      let val = partialMo[fieldname];
+      if ((typeof val) === 'string') {
+        val = "'" + val + "'";
+      }
+      return `${fieldname} = ${val}`;
+    }).join(', ');
+    const whereClause = this.buildWhereClause(partialMo);
+    const sqlText    = `UPDATE ${this.tableName} SET ${fieldUpdates} WHERE ${whereClause};`;
+    return sqlText;
+  }
+
+  protected buildWhereClause(partialMo): string {
+    return `id = ${partialMo.id}`;
   }
 
   protected buildDeleteSql = (id: number) => {
@@ -98,13 +112,9 @@ export class MoDb<MoClass> {
     client.release()
   }
 
-  create(partialMo?: any): Prom<Mo> {
+  create(partialMo?: Partial<Mo>): Prom<Mo> {
     partialMo          = partialMo || {};
-    return this.getNextId()
-      .then(nextId => {
-        partialMo.id = nextId;
-        return this.pool.query(this.buildInsertSql(partialMo));
-      })
+        return this.pool.query(this.buildInsertSql(partialMo))
       .then((res: QueryResult) => {
         if (res.rowCount === 1) {
           const mo = Object.create(this.moClass.prototype);
@@ -115,18 +125,27 @@ export class MoDb<MoClass> {
       })
   }
 
-  deleteWithId = (id: number):Prom<number> => {
-    return this.pool.query(`DELETE FROM ${this.tableName} WHERE id = '${id}'`)
-      .then( res => res.count);
-  };
+  update(partialMo?: any): Prom<Partial<Mo>> {
+    partialMo          = partialMo || {};
+        return this.pool.query(this.buildUpdateSql(partialMo))
+      .then((res: QueryResult) => {
+        if (res.rowCount === 1) {
+          const mo = Object.create(this.moClass.prototype);
+          mo.hydrate(partialMo);
+          return mo;
+        }
+        throw new Rezult(ErrorName.db_FailToUpdate);
+      })
+  }
 
   deleteAll = ():Prom<number> => {
     return this.pool.query(`DELETE FROM ${this.tableName}`)
-      .then( res => res.count);
-  };
-
-  findById = (id: number) => {
-    return this.pool.query(`DELETE FROM ${this.tableName} WHERE id = '${id}'`);
+      .then(res => {
+        return res.count
+      })
+      .catch(err => {
+        console.log(`=> mo-db:160 err ${util.inspect(err)}`)
+      });
   };
 
   find = (partialMo: Partial<Mo>): Prom<Mo[]> => {
@@ -149,9 +168,7 @@ export class MoDb<MoClass> {
       });
   };
 
-  protected
-
-  rollback(client, done) {
+  protected rollback(client, done) {
     return client.query('ROLLBACK');
   }
 }

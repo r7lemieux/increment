@@ -9,6 +9,7 @@ export class MoService<MoClass> {
 
   public moClass: MoClass;
   public moDb: MoDb<MoClass>;
+  voFields: string[] = [];
 
   constructor(moClass: MoClass, moDb: MoDb<MoClass>) {
     this.moClass = moClass;

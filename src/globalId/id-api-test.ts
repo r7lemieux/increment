@@ -3,9 +3,14 @@ import 'chai-http';
 import * as chai from 'chai';
 import chaiHttp = require('chai-http');
 import {idService} from './id-service';
-import app from '../app';
+import * as express from 'express';
 import * as util from 'util';
+import {Application} from 'express';
+import bodyParser = require('body-parser');
+import testSetup from '../common/testSetup';
+import {userService} from '../user/user-service';
 
+const routes = require('../common/routes');
 const idConfig      = require('./id-config.json');
 const incrementSize = idConfig.incrementSize;
 
@@ -14,6 +19,18 @@ const expect = chai.expect;
 const should = chai.should();
 
 describe('id api', () => {
+
+  let app: Application;
+
+  before(() => {
+    app = express();
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({extended: false}));
+    routes(app);
+    return testSetup()
+      .then(userService.deleteAll)
+  });
+
   describe('increment id', () => {
 
     it('should return default text ', () => {

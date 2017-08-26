@@ -13,20 +13,33 @@ export class UserController {
   }
 
   createUser = (req, res: Response) => {
-    console.log(`=> user-controller:14 req  ${util.inspect(req.body)}`);
     userService.create(req.body)
-      .then(ret => {
+      .then(user => {
+        const ret = userService.buildUserVO(user);
         res.send(ret);
       })
       .catch(err => {
-      console.log(`=> user-controller: Fail to create user ${JSON.stringify(req.body)}`);
+      console.log(`=> user-controller: Fail to create user ${JSON.stringify(req.body)}, err ${err}`);
+      res.send(err);
     })
+  }
+
+  updateUser = (req, res: Response) => {
+    userService.update(req.body)
+      .then(user => {
+        const ret = userService.buildUserVO(user);
+        res.send(ret);
+      })
+      .catch(err => {
+        console.log(`=> user-controller: Fail to update user ${JSON.stringify(req.body)}`);
+      })
   }
 
   retrieveUser = (req, res: Response) => {
     userService.findSingle(req.params)
       .then( user => {
-        res.send(user);
+        const ret = userService.buildUserVO(user);
+        res.send(ret);
       })
       .catch(err => {
         console.log(`=> user-controller: Fail to retrieve user ${JSON.stringify(req.params)}`);

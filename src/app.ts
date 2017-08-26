@@ -7,10 +7,14 @@ import {dbStarter} from './common/db/dbStarter-service';
 import {authService} from './auth/auth-service'
 import Bluebird = require('bluebird');
 import * as lodash from 'lodash';
+import * as session from 'express-session';
+import * as passport from 'passport';
+import {passportConfig} from './auth/passport-config';
 
-const _ = lodash;
-const routes    = require('./common/routes');
-const port      = 4010;
+const flash  = require('req-flash');
+const _      = lodash;
+const routes = require('./common/routes');
+const port   = 4010;
 
 class App {
 
@@ -18,10 +22,10 @@ class App {
 
   constructor() {
     this.express = express();
-    this.middleware();
     dbStarter.initDatabase();
+
     routes(this.express);
-    authService.initPassport(this.express);
+    this.middleware();
     this.express.listen(port, () => {
       console.log('kdr listening on port ' + port);
     });
@@ -32,6 +36,11 @@ class App {
     this.express.use(logger('dev'));
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({extended: false}));
+    this.express.use(session({ secret: 'qwerqwerqwer3323' }));
+    authService.initPassport(this.express);
+    passportConfig(passport);
+    this.express.use(passport.session());
+    this.express.use(flash());
   }
 
 }

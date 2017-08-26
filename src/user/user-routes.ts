@@ -1,10 +1,24 @@
-import * as passport from 'passport';
 import {userController} from './user-controller';
-// import {Application, Request, Response} from 'express';
 
 export function userRoutes(app) {
-  app.post('/api/user', (req, res) => {
-    return userController.createUser(req, res)
+  app.post('/api/user', userController.createUser);
+  app.get('/api/user/:username', userController.retrieveUser);
+  app.put('/api/user/:username', userController.updateUser);
+
+  app.get('/profile', isLoggedIn, function(req, res) {
+    res.send({
+      user : req.user
+    });
   });
-  app.get('/api/user/:username', (req, res) => userController.retrieveUser(req, res));
+
+  function isLoggedIn(req, res, next) {
+
+    // if user is authenticated in the session, carry on
+    if (req.isAuthenticated())
+      return next();
+
+    // if they aren't redirect them to the home page
+    res.redirect('/');
+  }
+
 }

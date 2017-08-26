@@ -5,6 +5,7 @@ import {User} from './user';
 import {userDb} from './user-db';
 import {callback} from '../common/core/interfaces';
 import * as Prom from 'bluebird';
+import {pick} from 'lodash';
 import {Rezult} from '../common/message/rezult';
 import {ErrorName} from '../common/message/errorName';
 import {dbValidationService, validator} from '../common/db/dbValidation-service';
@@ -14,6 +15,8 @@ export class UserService extends MoService<User> {
 
   constructor() {
     super(User.prototype, userDb);
+    this.voFields = ['username', 'email', 'facebookEmail', 'twitterDisplayName', 'googleEmail'];
+
   }
 
   create(partialUser: Partial<User>, cb?: callback): Prom<User> {
@@ -28,6 +31,26 @@ export class UserService extends MoService<User> {
       })
       .catch(err => {
         console.error(`Fail to create user ${JSON.stringify(partialUser)}  Error => ${err}`);
+        if (cb) {
+          cb(err);
+        } else {
+          throw err;
+        }
+      });
+  }
+
+  update(partialUser: Partial<User>, cb?: callback): Prom<User> {
+    return this.moDb.update(partialUser)
+      .then(user => {
+        if (cb) {
+          cb(null, {
+            verifyPassword: (pw) => true,
+          });
+        }
+        return  user as User;
+      })
+      .catch(err => {
+        console.error(`Fail to update user ${JSON.stringify(partialUser)}  Error => ${err}`);
         if (cb) {
           cb(err);
         } else {
@@ -59,6 +82,11 @@ export class UserService extends MoService<User> {
     testField('phone', 'phone');
     testField('facebookId', 'key');
     return rezults;
+  }
+
+  buildUserVO(user: User):Partial<User> {
+    const userVO = pick(user, this.voFields);
+    return userVO;
   }
 }
 

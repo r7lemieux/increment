@@ -15,7 +15,6 @@ const routes = require('../common/routes');
 chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
-
 const username = 'Richard';
 
 describe('user api', () => {
@@ -27,14 +26,14 @@ describe('user api', () => {
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: false}));
     routes(app);
-    testSetup()
+    return testSetup()
       .then(userService.deleteAll)
   });
 
   it('should create a user ', () => {
     return chai.request(app).post('/api/user')
       .set('content-type', 'application/x-www-form-urlencoded')
-      .send({username: username})
+      .send({username: username, email:"aaa@bbb.ccc"})
       .then(res => {
         res.status.should.eql(200);
         res.body.should.haveOwnProperty('username', username);
@@ -57,6 +56,22 @@ describe('user api', () => {
         return should.fail(e, '', 'Fail to retrieve user ' + username);
       });
   });
+
+  it('should update a user', () => {
+    const newEmail = 'ddd@eee.fff'
+    return chai.request(app).put('/api/user/' + username)
+      .send({username: username, email: newEmail})
+      .then(res => {
+        res.status.should.eql(200);
+        res.body.username.should.eql(username);
+        return res.body.email.should.eql(newEmail);
+      })
+      .catch(function (e) {
+        console.log("error:", e.status);
+        return should.fail(e, '', 'Fail to update user ' + username);
+      });
+  });
+
 
 });
 //# sourceMappingURL=user-service-spec.js.map
